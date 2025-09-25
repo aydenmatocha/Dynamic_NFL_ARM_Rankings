@@ -81,7 +81,8 @@ standings <- standings %>%
   mutate(pct = as.numeric(PCT), pf = as.numeric(PF), pa = as.numeric(PA)) %>%
   select(team, pct, pf, pa) %>%
   mutate(diff = pf-pa) %>%
-  mutate(team = team_abbr[team])
+  mutate(team = team_abbr[team]) %>%
+  select(team, pct, diff)
 
 standings
 ```
@@ -93,9 +94,27 @@ standings
 
 
 # Get EPA Data
-## Get Offensive Mean EPA
+## Create get_epa Function
 ```{r}
+get_epa <- function(team_input) {
+  off_output <- pbp %>%
+    filter(posteam == team_input) %>%
+    group_by(posteam) %>%
+    summarize(off_epa = round(mean(epa, na.rm = TRUE), 3)) %>%
+    rename(team = posteam)
+  
+  def_output <- pbp %>%
+    filter(defteam == team_input) %>%
+    group_by(defteam) %>%
+    summarize(def_epa = round(mean(epa, na.rm = TRUE), 3)) %>%
+    rename(team = defteam)
 
+combined <- off_output %>%
+  left_join(def_output, by = "team")
+
+return(combined)
+}
+get_epa("LAC")
 ```
 
 ## Get Defensive Mean EPA
