@@ -117,12 +117,30 @@ return(combined)
 get_epa("LAC")
 ```
 
-## Get Defensive Mean EPA
+## Loop Through Teams
 ```{r}
+teams <- pbp %>%
+  filter(!is.na(posteam)) %>%
+  distinct(posteam) %>%
+  arrange(posteam) %>%
+  pull(posteam)
 
+teams
+
+epa_results <- tibble()
+for (i in teams) {
+  epa_results <- bind_rows(epa_results, get_epa(i))
+}
+epa_results
 ```
 
-## Function For Teams
+## Combine For Initial Values
+```{r}
+initial_values <- standings %>%
+  left_join(epa_results, by = "team")
+initial_values
+```
+
 
 
 
