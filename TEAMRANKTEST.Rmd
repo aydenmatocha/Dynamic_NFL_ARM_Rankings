@@ -8,6 +8,7 @@ output: html_notebook
 library(rvest)
 library(dplyr)
 library(nflfastR)
+library(DT)
 ```
 
 # Load Play-By-Play Data
@@ -151,7 +152,7 @@ diff_range <- max_diff - min_diff
 get_init_ratings <- function(input_df) {
   output <- input_df %>% mutate(
     pct = round(pct * 2, 2), # min: 0%, mean: 50%, max: 100%
-    diff = round(((diff-min_diff) / diff_range) * 2, 2), # min: min_diff, mean: , max: max_diff
+    diff = round(((diff-min_diff) / diff_range) * 2, 2), # min: min_diff, mean: ?, max: max_diff
     off_epa = round(pmax(pmin((off_epa + .15) * 6.67, 2), 0), 2), # min: -.15, mean: 0, max: .15
     def_epa = round(pmax(pmin((def_epa - .15) * -6.67, 2), 0), 2), # min: .15, mean: 0, max: -.15
     total = pct + diff + off_epa + def_epa
@@ -181,9 +182,7 @@ get_opponents <- function(team_input) {
 return(output)
 }
 
-get_opponents("SEA")
-
-results <- tibble()
+sos_results <- tibble()
 for (i in teams) {
   opp <- get_opponents(i)
   ratings <- c()
@@ -194,18 +193,37 @@ for (i in teams) {
     ratings <- append(ratings, opp_rating)
   }
   mean_rating <- round(mean(ratings), 2)
-  test <- tibble(i, mean_rating)
-  results <- bind_rows(results, test)
+  rating_tibble <- tibble(i, mean_rating)
+  sos_results <- bind_rows(sos_results, rating_tibble)
 }
-results %>%
+sos_results <- sos_results %>%
   rename(team = i, sos = mean_rating)
-results
+sos_results
 ```
 
+## Get SOS
 ```{r}
-test <- initial_ratings %>%
-      filter(team == "SEA") %>%
-      pull(total)
-test
+min_sos <- min(sos_results$sos)
+max_sos <- max(sos_results$sos)
+sos_range <- max_sos - min_sos
+get_sos <- function(input_df) {
+  output <- input_df %>%
+    mutate(
+      sos = round((((sos - min_sos) / sos_range) * 2), 2)
+        )
+  return(output)
+}
+sos_ratings <- get_sos(sos_results)
+sos_ratings
+```
+
+
+```{r}
+final_ratings <- initial_ratings %>%
+  left_join(sos_ratings, by = "team") %>%
+  select(-total) %>%
+  mutate(total = pct + diff + off_epa + def_epa + sos) %>%
+  arrange(-total)
+datatable(final_ratings)
 ```
 
