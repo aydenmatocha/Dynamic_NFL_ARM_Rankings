@@ -47,6 +47,7 @@ for (receiver in receivers) {
   results <- bind_rows(results, get_receiver_data(receiver, pbp))
 }
 results <- results %>% arrange(-mean_epa)
+results
 ```
 
 

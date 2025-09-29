@@ -172,15 +172,40 @@ initial_ratings
 ## Get Opponents
 ```{r}
 get_opponents <- function(team_input) {
-  first_plays <- pbp %>%
+  output <- pbp %>%
   filter(posteam == team_input) %>%
   group_by(game_id) %>%
   slice_min(., order_by = play_id) %>% # Take only first play
   ungroup() %>%
-  select(defteam)
-return(first_plays)
+  pull(defteam)
+return(output)
 }
 
 get_opponents("SEA")
+
+results <- tibble()
+for (i in teams) {
+  opp <- get_opponents(i)
+  ratings <- c()
+  for (j in opp) {
+    opp_rating <- initial_ratings %>%
+      filter(team == j) %>%
+      pull(total)
+    ratings <- append(ratings, opp_rating)
+  }
+  mean_rating <- round(mean(ratings), 2)
+  test <- tibble(i, mean_rating)
+  results <- bind_rows(results, test)
+}
+results %>%
+  rename(team = i, sos = mean_rating)
+results
+```
+
+```{r}
+test <- initial_ratings %>%
+      filter(team == "SEA") %>%
+      pull(total)
+test
 ```
 
