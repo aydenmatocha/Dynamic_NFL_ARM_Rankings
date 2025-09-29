@@ -1,7 +1,28 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Dynamic ARM Rankings 2025"
+author: "Ayden Matocha"
+date: "9/29/2025"
+output:
+  html_document:
+    toc: TRUE
 ---
+
+# ARM Ranking
+1. Win% (PFN)
+2. Point Differential (PFN)
+3. EPA/play (nflfastR)
+4. EPA/play Against (nflfastR)
+5. SOS (initial values)
+
+# ARM Initial Formula
+$$
+\text{ARM}_i = (WP \cdot c_1) + (\frac{(PD - \alpha_1)}{\alpha_2} \cdot c_1) + ((EPA + c_2) \cdot c_3) + ((EPA_A - c_2) \cdot -c_3)
+$$
+
+# ARM Formula
+$$
+\text{ARM} = \text{ARM}_i + (\frac{(SOS - \alpha_3)}{\alpha_4} \cdot c_1)
+$$
 
 # Load Packages
 ```{r}
@@ -62,18 +83,12 @@ url <- "https://www.profootballnetwork.com/nfl/standings/league/2025"
 
 page <- read_html(url)
 
-# grab *all* tables on the page
 tables <- page %>% html_nodes("table") %>% html_table(fill = TRUE)
 
-tables
-
-# Take the first (main) standings table
 standings <- tables[[1]]
 
-# Promote first row to headers
 colnames(standings) <- standings[1, ]
 
-# Drop the first row (now redundant)
 standings <- standings[-1, ]
 
 colnames(standings)[1] <- "team"
@@ -87,9 +102,6 @@ standings <- standings %>%
 
 standings
 ```
-
-
-
 
 
 
@@ -110,12 +122,11 @@ get_epa <- function(team_input) {
     summarize(def_epa = round(mean(epa, na.rm = TRUE), 3)) %>%
     rename(team = defteam)
 
-combined <- off_output %>%
-  left_join(def_output, by = "team")
+  combined <- off_output %>%
+    left_join(def_output, by = "team")
 
-return(combined)
+  return(combined)
 }
-get_epa("LAC")
 ```
 
 ## Loop Through Teams
@@ -125,8 +136,6 @@ teams <- pbp %>%
   distinct(posteam) %>%
   arrange(posteam) %>%
   pull(posteam)
-
-teams
 
 epa_results <- tibble()
 for (i in teams) {
@@ -201,7 +210,7 @@ sos_results <- sos_results %>%
 sos_results
 ```
 
-## Get SOS
+## Get SOS Ratings
 ```{r}
 min_sos <- min(sos_results$sos)
 max_sos <- max(sos_results$sos)
@@ -217,12 +226,12 @@ sos_ratings <- get_sos(sos_results)
 sos_ratings
 ```
 
-
+# Get Final Ratings
 ```{r}
 final_ratings <- initial_ratings %>%
   left_join(sos_ratings, by = "team") %>%
   select(-total) %>%
-  mutate(total = pct + diff + off_epa + def_epa + sos) %>%
+  mutate(total = round(pct + diff + off_epa + def_epa + sos, 2)) %>%
   arrange(-total)
 datatable(final_ratings)
 ```
