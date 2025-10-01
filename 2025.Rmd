@@ -127,6 +127,25 @@ get_epa <- function(team_input) {
 
   return(combined)
 }
+
+get_epa_wo_team <- function(team_input, team_remove) {
+  off_output <- pbp %>%
+    filter(posteam == team_input, defteam != team_remove) %>%
+    group_by(posteam) %>%
+    summarize(off_epa = round(mean(epa, na.rm = TRUE), 3)) %>%
+    rename(team = posteam)
+  
+  def_output <- pbp %>%
+    filter(defteam == team_input, posteam != team_remove) %>%
+    group_by(defteam) %>%
+    summarize(def_epa = round(mean(epa, na.rm = TRUE), 3)) %>%
+    rename(team = defteam)
+
+  combined <- off_output %>%
+    left_join(def_output, by = "team")
+
+  return(combined)
+}
 ```
 
 ## Loop Through Teams
@@ -142,6 +161,7 @@ for (i in teams) {
   epa_results <- bind_rows(epa_results, get_epa(i))
 }
 epa_results
+
 ```
 
 ## Combine For Initial Values
@@ -170,8 +190,22 @@ get_init_ratings <- function(input_df) {
   return(output)
 }
 
+# Without a certain team (used for SOS, can only remove epa)
+get_init_ratings_wo_team <- function(team_remove, opponents) {
+  epa_results_wo_team <- tibble()
+  for (i in opponents) {
+    epa_results_wo_team <- bind_rows(epa_results_wo_team, get_epa_wo_team(i, team_remove))
+  }
+  
+  initial_values_wo_team <- rows_update(initial_values, epa_results_wo_team, by = "team")
+
+  return(get_init_ratings(initial_values_wo_team))
+}
+
 initial_ratings <- get_init_ratings(initial_values)
 initial_ratings
+#test <- get_init_ratings_wo_team("LAC")
+#test
 ```
 
 
@@ -195,8 +229,15 @@ sos_results <- tibble()
 for (i in teams) {
   opp <- get_opponents(i)
   ratings <- c()
+  # Get EPA data without x team
+  initial_ratings_wo_team <- get_init_ratings_wo_team(i, opp)
   for (j in opp) {
-    opp_rating <- initial_ratings %>%
+    #opp_rating <- initial_ratings %>%
+      #filter(team == j) %>%
+      #pull(total)
+    #ratings <- append(ratings, opp_rating)
+    
+    opp_rating <- initial_ratings_wo_team %>%
       filter(team == j) %>%
       pull(total)
     ratings <- append(ratings, opp_rating)
