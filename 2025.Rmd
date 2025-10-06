@@ -30,6 +30,8 @@ library(rvest)
 library(dplyr)
 library(nflfastR)
 library(DT)
+library(ggplot2)
+library(nflplotR)
 ```
 
 # Load Play-By-Play Data
@@ -275,5 +277,43 @@ final_ratings <- initial_ratings %>%
   mutate(total = round(pct + diff + off_epa + def_epa + sos, 2)) %>%
   arrange(-total)
 datatable(final_ratings)
+```
+
+```{r}
+final_ratings_tier <- final_ratings %>%
+  mutate(
+    tier = case_when(
+      total >= 7        ~ "7+",
+      total >= 6        ~ "6-7",
+      total >= 5        ~ "5-6",
+      total >= 4        ~ "4-5",
+      total >= 3        ~ "3-4",
+      TRUE              ~ "3-"
+    )
+  )
+final_ratings_tier
+```
+
+# Create Power Ranking Tiers
+```{r}
+final_ratings_tier <- final_ratings_tier %>%
+  group_by(tier) %>%
+  arrange(desc(total)) %>%
+  mutate(
+    xpos = seq_along(team),
+    xpos_text = xpos + 0.25
+  ) %>%
+  ungroup()
+
+ggplot(final_ratings_tier, aes(x = xpos, y = tier)) +
+  geom_nfl_logos(aes(team_abbr = team), width = 0.07) +
+  geom_text(aes(x = xpos_text, label = total), hjust = -0.25, vjust = -2, size = 3) +
+  scale_y_discrete(limits = rev(levels(final_ratings_tier$tier))) +
+  scale_x_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
 ```
 
