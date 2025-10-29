@@ -199,6 +199,9 @@ get_init_ratings_wo_team <- function(team_remove, opponents) {
     epa_results_wo_team <- bind_rows(epa_results_wo_team, get_epa_wo_team(i, team_remove))
   }
   
+  epa_results_wo_team <- epa_results_wo_team %>%
+    distinct(team, .keep_all = TRUE)
+  
   initial_values_wo_team <- rows_update(initial_values, epa_results_wo_team, by = "team")
 
   return(get_init_ratings(initial_values_wo_team))
