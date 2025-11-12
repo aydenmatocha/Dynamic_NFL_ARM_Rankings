@@ -36,8 +36,7 @@ library(nflplotR)
 
 # Load Play-By-Play Data
 ```{r}
-pbp <- load_pbp(2025) %>%
-  filter(week < 10)
+pbp <- load_pbp(2025)
 ```
 
 
