@@ -1,0 +1,25 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+output <- pbp %>%
+filter(posteam == "SF") %>%
+group_by(game_id) %>%
+slice_min(., order_by = play_id) %>% # Take only first play
+ungroup() %>%
+pull(defteam) #%>%
+#unique() # Remove duplicate teams
+print(output)
+
+```
+```{r}
+get_epa_wo_team("LAC", "KC")
+```
+
+```{r}
+initial_values
+teams
+```
+

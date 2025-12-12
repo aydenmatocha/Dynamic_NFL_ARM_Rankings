@@ -99,6 +99,7 @@ standings <- standings %>%
   mutate(pct = as.numeric(PCT), pf = as.numeric(PF), pa = as.numeric(PA)) %>%
   select(team, pct, pf, pa) %>%
   mutate(diff = pf-pa) %>%
+  mutate(team = gsub("\\s*\\([a-z]\\)", "", team)) %>%
   mutate(team = team_abbr[team]) %>%
   select(team, pct, diff)
 
@@ -226,7 +227,8 @@ get_opponents <- function(team_input) {
   group_by(game_id) %>%
   slice_min(., order_by = play_id) %>% # Take only first play
   ungroup() %>%
-  pull(defteam)
+  pull(defteam) %>%
+  unique() # Remove duplicate teams
 return(output)
 }
 
