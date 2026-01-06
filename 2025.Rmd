@@ -99,7 +99,7 @@ standings <- standings %>%
   mutate(pct = as.numeric(PCT), pf = as.numeric(PF), pa = as.numeric(PA)) %>%
   select(team, pct, pf, pa) %>%
   mutate(diff = pf-pa) %>%
-  mutate(team = gsub("\\s*\\([a-z]\\)", "", team)) %>%
+  mutate(team = gsub("\\s*\\(([a-z]|\\*)\\)", "", team)) %>%
   mutate(team = team_abbr[team]) %>%
   select(team, pct, diff)
 
